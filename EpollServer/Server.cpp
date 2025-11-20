@@ -1,4 +1,10 @@
-﻿#include "Server.h"
+﻿// TODO 
+// ADD UDP FILE DESCRIPTORS
+// ADD CLIENT CONNECTION SET -> CREATE MESSAGE METHOD THEN SERVER IS DOWN
+// RELOCATE BLOCKS OF CODE IN METHODS
+
+
+#include "Server.h"
 
 void Server::start() {
 	// create server socket
@@ -60,11 +66,21 @@ void Server::start() {
 	struct epoll_event events[MAX_EVENTS];
 	while(!shutdownRequested){
 		// waiting for new events
-		int eventsCount = epoll_wait(epfd, events, MAX_EVENTS, -1);
+		int eventsCount = epoll_wait(epfd, events, MAX_EVENTS, 10);
 		if(eventsCount < 0){
+			if(errno == EINTR && shutdownRequested) {
+                // break by signal
+                break;
+            }
+
 			std::cerr << "Failed to wait events" << std::endl;
 			break;
 		}
+
+		// if shutdoned and has no events
+		if(shutdownRequested && eventsCount == 0) {
+            break;
+        }
 
 		for(int i = 0; i < eventsCount; ++i){
 			// case when server has new connection: event fd == server fd
@@ -150,7 +166,7 @@ void Server::start() {
 						currentClientsCount--;
 						epoll_ctl(epfd, EPOLL_CTL_DEL, client_fd, nullptr);
 						close(client_fd);
-						break;
+						continue;
 					}
 					else if(receivedMessage == "/shutdown"){
 						response = "Server shutting down...\nDisconnected!\n";
