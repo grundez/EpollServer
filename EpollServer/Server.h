@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <time.h>
+#include <chrono>
 
 // define constants 
 #define MAX_BUFFER 4096
@@ -25,9 +26,13 @@ class Server {
 	char buffer[MAX_BUFFER];
 	size_t currentClientsCount;
 	size_t totalClientCount;
+	bool shutdownRequested = false;
 
 public:
+	Server() : currentClientsCount(0), totalClientCount(0), shutdownRequested(false) {}
 	void start();
+	size_t getCurrentClientCount() const{ return currentClientsCount; };
+	size_t getTotalClientCount() const { return totalClientCount; };
 };
 
 
